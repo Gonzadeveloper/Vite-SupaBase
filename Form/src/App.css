@@ -1,0 +1,20 @@
+form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+form input {
+  padding: 0.5rem;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ccc;
+  padding: 0.5rem 0;
+}

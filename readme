@@ -1,0 +1,204 @@
+# Vite + Supabase CRUD Application
+
+This guide outlines the steps we followed to build a simple CRUD application using **Vite** for the frontend and **Supabase** as the backend.
+
+---
+
+## **1. Project Setup**
+
+### **Frontend**
+1. **Initialize the Vite project**
+   ```bash
+   npm create vite@latest my-project --template react
+   cd my-project
+   npm install
+   ```
+2. **Install Supabase client**
+   ```bash
+   npm install @supabase/supabase-js
+   ```
+
+---
+
+## **2. Supabase Configuration**
+
+### **1. Create a Supabase Project**
+- Sign up at [Supabase](https://supabase.com/).
+- Create a new project. This will provide you with a **Supabase URL** and an **anon/public key**.
+
+### **2. Create the `users` Table**
+In the Supabase dashboard:
+1. Navigate to the **Table Editor**.
+2. Create a table named `users` with the following schema:
+   - `id`: `uuid` (Primary Key, default `gen_random_uuid()`)
+   - `name`: `text`
+   - `email`: `text`
+
+   ```sql
+   create table users (
+     id uuid primary key default gen_random_uuid(),
+     name text not null,
+     email text not null
+   );
+   ```
+
+### **3. Enable Row Level Security (RLS)**
+By default, Supabase uses RLS to secure your data. We configured the following policies to enable CRUD functionality:
+
+- **Allow Insert:**
+   ```sql
+   create policy "Allow All Insert"
+   on public.users
+   as permissive
+   for insert
+   to public
+   with check (true);
+   ```
+
+- **Allow Select:**
+   ```sql
+   create policy "Allow All Select"
+   on public.users
+   as permissive
+   for select
+   to public
+   using (true);
+   ```
+
+> Repeat similar steps for `update` and `delete` if necessary.
+
+---
+
+## **3. Supabase Integration in Vite**
+
+### **1. Store Supabase Credentials in `.env`**
+Create a `.env` file in the root of your project and add your Supabase URL and anon key:
+```env
+VITE_SUPABASE_URL=https://<your-supabase-url>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+### **2. Initialize Supabase Client**
+Create a `supabase.js` file in your project:
+```javascript
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+---
+
+## **4. CRUD Operations**
+
+### **1. Create a User**
+```javascript
+const { data, error } = await supabase
+  .from('users')
+  .insert([{ name: 'John Doe', email: 'john@example.com' }]);
+```
+
+### **2. Fetch Users**
+```javascript
+const { data, error } = await supabase
+  .from('users')
+  .select('*');
+```
+
+### **3. Update a User**
+```javascript
+const { data, error } = await supabase
+  .from('users')
+  .update({ name: 'Updated Name' })
+  .eq('id', userId);
+```
+
+### **4. Delete a User**
+```javascript
+const { data, error } = await supabase
+  .from('users')
+  .delete()
+  .eq('id', userId);
+```
+
+---
+
+## **5. Frontend Implementation**
+
+### **1. User Form**
+Create a form to allow users to input their name and email for registration.
+```jsx
+function UserForm() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ name, email }]);
+
+    if (error) console.error(error);
+    else console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+      <button type="submit">Add User</button>
+    </form>
+  );
+}
+```
+
+### **2. Display User List**
+Fetch and display users in a list.
+```jsx
+useEffect(() => {
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.from('users').select('*');
+    if (!error) setUsers(data);
+  };
+  fetchUsers();
+}, []);
+```
+
+---
+
+## **6. Common Issues and Fixes**
+
+### **Error: `new row violates row-level security policy`**
+- Cause: RLS is enabled but policies are not configured.
+- Fix: Ensure proper policies for `INSERT`, `SELECT`, etc., are enabled.
+
+### **Error: `supabaseUrl is required`**
+- Cause: Environment variables not loaded.
+- Fix:
+  - Ensure `.env` is in the root directory.
+  - Prefix variables with `VITE_`.
+  - Restart Vite after adding `.env`.
+
+### **Error: `42501` (Access Denied)**
+- Cause: Insufficient permissions.
+- Fix: Check RLS policies and ensure the `public` role has access.
+
+---
+
+## **7. Final Outcome**
+- A fully functional CRUD app with:
+  - **User Registration:** Create users via a form.
+  - **User Listing:** Display users fetched from Supabase.
+  - **User Update/Delete:** Edit or delete users with button controls.
+- Supabase simplifies backend management while Vite ensures a fast and responsive frontend.
+
+---
+
+## **8. Future Improvements**
+- Add authentication for secured operations.
+- Implement pagination for large datasets.
+- Use a state management library like Redux for better scalability.
+
+---
