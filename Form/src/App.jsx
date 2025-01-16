@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import UserForm from "./components/UserForm";
 import UserList from "./components/UserList";
 import { supabase } from "./supabase";
+import './App.css'
 
 const App = () => {
   const [users, setUsers] = useState([]);
@@ -14,14 +15,23 @@ const App = () => {
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.from("users").select("*");
-    if (error) console.error(error);
-    else setUsers(data);
+    if (error) {
+      console.error(error);
+      alert("Error al cargar los usuarios");
+    } else {
+      setUsers(data || []);
+    }
   };
 
   const addUser = async (user) => {
     const { data, error } = await supabase.from("users").insert([user]);
-    if (error) console.error(error);
-    else setUsers((prev) => [...prev, ...data]);
+    fetchUsers()
+    if (error) {
+      console.error(error);
+    } else {
+      // Validamos que `data` sea un array antes de expandirlo
+      setUsers((prev) => [...prev, ...(Array.isArray(data) ? data : [])]);
+    }
   };
 
   const updateUser = async (user) => {

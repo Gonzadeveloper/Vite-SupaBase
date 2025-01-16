@@ -5,6 +5,9 @@ form {
 
 form input {
   padding: 0.5rem;
+  border-radius: 1em;
+  background-color: white;
+  color: black;
 }
 
 ul {
